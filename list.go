@@ -17,11 +17,14 @@ func (p *printer) writeList(val reflect.Value, opt fieldOptions) error {
 		}
 		p.indent--
 
-		if !opt.Inline {
-			p.buf.WriteByte('\n')
-		} else {
-			p.buf.WriteByte('\t')
+		if i != val.Len()-1 {
+			if !opt.Inline {
+				p.buf.WriteByte('\n')
+			} else {
+				p.buf.WriteString(", ")
+			}
 		}
+		p.indentPrewrite = false
 	}
 
 	return nil

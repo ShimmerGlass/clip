@@ -2,12 +2,18 @@ package clip
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/fatih/color"
 )
 
 func Print(v interface{}) error {
+	return Fprint(os.Stdout, v)
+}
+
+func Fprint(w io.Writer, v interface{}) error {
 	p := &printer{
 		buf: &strings.Builder{},
 	}
@@ -19,6 +25,6 @@ func Print(v interface{}) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(p.buf.String())
+	fmt.Fprintln(w, p.buf.String())
 	return nil
 }

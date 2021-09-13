@@ -14,10 +14,12 @@ func (p *printer) writeFields(fields []kvField, opt fieldOptions) error {
 	for i, field := range fields {
 		p.writeIndent()
 		opt.KeyStyle.color().Fprint(p.buf, field.Name)
-		p.buf.WriteString(": ")
+		p.buf.WriteString(":")
 
-		if !field.fieldOptions.Inline {
-			p.buf.WriteByte('\n')
+		if !field.Inline {
+			p.buf.WriteString("\n")
+		} else {
+			p.buf.WriteString(" ")
 		}
 
 		p.indent++
@@ -45,6 +47,7 @@ func (p *printer) structFields(val reflect.Value, base fieldOptions) ([]kvField,
 	res := []kvField{}
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
+
 		opts, err := parseTag(base, field.Tag.Get("clip"))
 		if err != nil {
 			return nil, fmt.Errorf("%T.%s: %w", typ.Name(), field.Name, err)
@@ -53,10 +56,32 @@ func (p *printer) structFields(val reflect.Value, base fieldOptions) ([]kvField,
 			opts.Name = field.Name
 		}
 
-		res = append(res, kvField{
-			Value:        val.Field(i).Interface(),
-			fieldOptions: opts,
-		})
+		value := val.Field(i)
+		if !value.CanInterface() {
+			continue
+		}
+
+		if p.shouldInline(value) {
+			opts.Inline = true
+		}
+
+		if value.Type().Kind() == reflect.Ptr {
+			value = reflect.Indirect(value)
+		}
+
+		if field.Anonymous && value.Kind() == reflect.Struct {
+			fields, err := p.structFields(value, base)
+			if err != nil {
+				return nil, err
+			}
+
+			res = append(res, fields...)
+		} else {
+			res = append(res, kvField{
+				Value:        value.Interface(),
+				fieldOptions: opts,
+			})
+		}
 	}
 
 	return res, nil
@@ -67,13 +92,28 @@ func (p *printer) mapFields(val reflect.Value) ([]kvField, error) {
 
 	res := []kvField{}
 	for iter.Next() {
+		opts := fieldOptions{
+			Name:   iter.Key().String(),
+			Inline: p.shouldInline(iter.Value()),
+		}
+
 		res = append(res, kvField{
-			Value: iter.Value().Interface(),
-			fieldOptions: fieldOptions{
-				Name: iter.Key().String(),
-			},
+			Value:        iter.Value().Interface(),
+			fieldOptions: opts,
 		})
 	}
 
 	return res, nil
+}
+
+func (p *printer) shouldInline(val reflect.Value) bool {
+	switch val.Kind() {
+	case reflect.Map:
+		return val.Len() == 0
+	case reflect.Float32, reflect.Float64, reflect.String, reflect.Int,
+		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	}
+
+	return false
 }
