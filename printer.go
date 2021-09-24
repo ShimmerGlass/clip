@@ -46,7 +46,7 @@ func (p *printer) write(v interface{}, opt fieldOptions) error {
 		}
 
 	case reflect.Float32, reflect.Float64, reflect.String, reflect.Int,
-		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Bool:
 		err := p.writeScalar(val.Interface(), opt)
 		if err != nil {
 			return err

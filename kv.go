@@ -111,7 +111,7 @@ func (p *printer) shouldInline(val reflect.Value) bool {
 	case reflect.Map:
 		return val.Len() == 0
 	case reflect.Float32, reflect.Float64, reflect.String, reflect.Int,
-		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Bool:
 		return true
 	}
 
