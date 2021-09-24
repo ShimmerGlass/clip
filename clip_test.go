@@ -58,6 +58,18 @@ map:
 bar: efgh
 `,
 	},
+	{
+		value: true,
+		expected: `
+true
+`,
+	},
+	{
+		value: false,
+		expected: `
+false
+`,
+	},
 }
 
 func TestCases(t *testing.T) {
